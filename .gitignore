@@ -1,0 +1,10 @@
+# ignore all logs
+.idea
+/.idea
+node_modules
+/node_modules
+android
+/android
+ios
+/ios
+
