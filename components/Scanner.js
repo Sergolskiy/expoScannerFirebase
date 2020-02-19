@@ -20,9 +20,11 @@ export default function Scanner(props) {
     const handleBarCodeScanned = ({ type, data }) => {
         setScanned(true);
 
-        if(data == '12345678'){
-            props.onReadCode(data);
-        }
+        // alert(data);
+
+
+        props.onReadCode(data);
+
         // alert(`Bar code with type ${type} and data ${data} has been scanned!`);
     };
 

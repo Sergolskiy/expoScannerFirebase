@@ -1,28 +1,17 @@
 import React, { Component }  from 'react';
 import {
-    AppRegistry,
     StyleSheet,
     Text,
     View,
     Button,
-    TextInput,
-    Animated,
-    Easing,
-    ScrollView,
-    RefreshControl
+    AsyncStorage
 } from 'react-native';
 
-import Scanner from './Scanner';
+
+import { NativeRouter, Route, Link, Redirect  } from "react-router-native";
 import LogoComponent from './LogoComponent';
 
 export default class HomeComponent extends React.Component {
-
-    // constructor() {
-    //
-    //
-    //
-    //     // this.handleClick = this.handleClick.bind(this);
-    // }
 
     state = {
         scannerState: false,
@@ -30,42 +19,30 @@ export default class HomeComponent extends React.Component {
         name: '',
         cell: '',
         hasData: false,
-        text: '1'
-    };
+        text: '1',
+        auth: false,
+        product: {
+            name: '',
+            user: '',
+            upc: '',
 
-    handleLanguage = (langValue) => {
-        fetch('https://facebook.github.io/react-native/movies.json')
-            .then((response) => response.json())
-            .then((responseJson) => {
-                this.setState(() => ({
-                    name: responseJson.movies[0].title,
-                    cell: responseJson.movies[0].releaseYear,
-                    hasData: true,
-                }));
-
-                alert(this.state.hasData);
-
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-    };
-
-    skipScan = (data) => {
-        if(data){
-            this.setState(() => ({
-                name: '',
-                cell: '',
-                hasData: false,
-                text: '1'
-            }));
         }
     };
 
-    handleClick() {
+    componentDidMount() {
+        AsyncStorage.getItem('authentication_data').then((res) => {
+            if (res == null) {
+                this.setState(() => ({
+                    auth: true
+                }))
+            }
+        });
+    }
+
+    logout() {
+        AsyncStorage.removeItem('authentication_data');
         this.setState(state => ({
-            scannerState: !state.scannerState,
-            hasData: false
+            auth: true
         }));
     }
 
@@ -74,12 +51,7 @@ export default class HomeComponent extends React.Component {
     render() {
 
         let openTxt = 'Open scanner';
-
-        if(this.state.scannerState){
-            openTxt = 'Close scanner';
-        } else {
-            openTxt = 'Open scanner';
-        }
+        this.state.scannerState ? openTxt = 'Close scanner' : openTxt = 'Open get product';
 
         return (
             <View style={{
@@ -87,46 +59,46 @@ export default class HomeComponent extends React.Component {
                 flexDirection: 'column',
                 alignContent: 'center'
             }}>
-               <LogoComponent/>
+
+                <View style={styles.logout}>
+                    <Button
+                        color="#00a65a"
+                        title='Logout'
+                        style={{
+                            marginTop: 10,
+                            width: 100
+                        }}
+                        onPress={() => {this.logout()}}
+                    />
+                </View>
+
+
+                {this.state.auth ? <Redirect to="/sigin" /> : <View/>}
+
+                <LogoComponent/>
 
                <View style={{
                    justifyContent: 'center',
-                   flexDirection: 'row',
+                   flexDirection: 'column',
+                   alignItems: 'center'
                }}>
-                <Button
-                    color="#00a65a"
-                    title={openTxt}
-                    onPress={()=> {this.handleClick()}}
-                />
+
+                   <Link
+                       to="/getproduct"
+                       underlayColor="#f0f4f7"
+                       style={styles.button}
+                   >
+                       <Text style={{color: '#ffffff', flex:0, width:142, textAlign: 'center', }}>OPEN GET PRODUCT</Text>
+                   </Link>
+                   <Link
+                       to="/postproduct"
+                       underlayColor="#f0f4f7"
+                       style={styles.button}
+                   >
+                       <Text style={{color: '#ffffff'}}>OPEN POST PRODUCT</Text>
+                   </Link>
                </View>
 
-                {this.state.scannerState && <Scanner onReadCode={this.handleLanguage} skipScanPass={this.skipScan} />}
-
-                {this.state.hasData &&
-                    <View style={styles.dataBlock}>
-                         <Text>Name: {this.state.name} </Text>
-                         <Text>Cell: {this.state.cell} </Text>
-
-                        <View style={styles.inputBlock}>
-                            <Text>Count </Text>
-                            <TextInput
-                                style={styles.inputStyle}
-                                placeholder="Count"
-                                value={this.state.text}
-                                onChangeText={(text) => this.setState({text})}
-                            />
-                        </View>
-
-                        <Button
-                            color="#00a65a"
-                            title='Send'
-                            style={{
-                                marginTop: 10,
-                            }}
-                        />
-
-                    </View>
-                }
             </View>
         );
     }
@@ -134,6 +106,33 @@ export default class HomeComponent extends React.Component {
 }
 
 const styles = StyleSheet.create({
+
+    logout: {
+        flex: 0,
+        justifyContent: 'flex-end',
+        flexDirection: 'row',
+        padding: 10,
+        paddingTop: 0
+    },
+
+    button: {
+        flex: 0,
+        backgroundColor: '#00a65a',
+        padding: 10,
+        paddingLeft: 15,
+        paddingRight: 15,
+        borderRadius: 2,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        marginBottom: 10,
+    },
+
     container: {
         flex: 1,
         justifyContent: 'center',
