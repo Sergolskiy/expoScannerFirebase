@@ -7,9 +7,6 @@ export default function Scanner(props) {
     const [scanned, setScanned] = useState(false);
 
 
-
-
-
     useEffect(() => {
         (async () => {
             const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -28,8 +25,14 @@ export default function Scanner(props) {
         // alert(`Bar code with type ${type} and data ${data} has been scanned!`);
     };
 
+
+
     const skipScan = () => {
         props.skipScanPass(true);
+    }
+
+    const addScanProduct = () => {
+        props.addScanProductPass(true);
     }
 
     if (hasPermission === null) {
@@ -65,7 +68,13 @@ export default function Scanner(props) {
                 marginTop: 20,
                 height: 36
             }}>
-                {scanned && <Button title={'Tap to Scan Again'} onPress={() => {setScanned(false); skipScan();}} />}
+                {scanned &&
+                    <View style={{flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginLeft: 20, marginRight: 20,}}>
+                        <Button title={'Rescan'} onPress={() => {setScanned(false); skipScan();}} />
+
+                        <Button title={'Next'} onPress={() => {setScanned(false); addScanProduct();}} />
+                    </View>
+                }
             </View>
 
 

@@ -9,6 +9,7 @@ import {
     Animated,
     Easing,
     ScrollView,
+    Picker,
     RefreshControl, AsyncStorage
 } from 'react-native';
 
@@ -19,16 +20,17 @@ import LogoComponent from './LogoComponent';
 export default class GetProductComponent extends React.Component {
 
     state = {
-        scannerState: false,
+        scannerState: true,
         hasData: false,
         text: '1',
         auth: false,
-        product: {
+        temporaryProduct: {
             name: '',
             user: '',
             upc: '',
-
-        }
+        },
+        products: [],
+        productsData: false,
     };
 
     componentDidMount() {
@@ -48,7 +50,7 @@ export default class GetProductComponent extends React.Component {
         }));
     }
 
-    handleLanguage = (dataScan) => {
+    readCode = (dataScan) => {
         fetch('https://test.skladusa.com/api/product/upc/'+dataScan, {
             method: 'GET',
             headers: {
@@ -59,9 +61,9 @@ export default class GetProductComponent extends React.Component {
         }).then((response) => response.json())
             .then((responseJson) => {
                 let str = JSON.stringify(responseJson, null, 4);
-                alert(str);
+                // alert(str);
                 this.setState(() => ({
-                    product: {
+                    temporaryProduct: {
                         name: responseJson.data.product.name,
                         user: responseJson.data.product.user,
                         upc: responseJson.data.product.upc,
@@ -73,14 +75,74 @@ export default class GetProductComponent extends React.Component {
 
     skipScan = (data) => {
         if(data){
-            this.setState(() => ({
-                name: '',
-                cell: '',
-                hasData: false,
-                text: '1'
-            }));
+            this.skipTemporaryProduct();
         }
     };
+
+    addScanProduct = (data) => {
+        if(data){
+            let state = this.state.products;
+            state.push(this.state.temporaryProduct);
+
+           this.skipTemporaryProduct();
+
+            let str = JSON.stringify(this.state.products, null, 4);
+            alert(str);
+        }
+    };
+
+    skipTemporaryProduct = () => {
+        this.setState(() => ({
+            temporaryProduct: {
+                name: '',
+                user: '',
+                upc: '',
+            },
+            hasData: false
+        }));
+    };
+
+    removeLastProduct = () => {
+
+        if(this.state.products.length > 0){
+            let state = this.state.products;
+            state.splice(-1,1);
+
+            let str = JSON.stringify(this.state.products, null, 4);
+            alert(str);
+        }
+
+    };
+
+    doneProduct = () => {
+
+        this.addScanProduct(true);
+
+        this.setState(() => ({
+            hasData: false,
+            productsData: true,
+        }))
+    };
+
+
+    closeOrder = () => {
+
+        this.skipTemporaryProduct();
+
+        this.setState(() => ({
+            productsData: false,
+            scannerState: false,
+        }));
+
+        let that = this;
+        setTimeout(() => {
+            that.setState(() => ({
+                scannerState: true,
+            }));
+        }, 100);
+
+    };
+
 
 
 
@@ -127,38 +189,90 @@ export default class GetProductComponent extends React.Component {
 
                 <Text style={{color: 'white', textAlign: 'center'}}>Get Product</Text>
 
-                {/*{this.state.scannerState && }*/}
+                <ScrollView>
+                    {this.state.scannerState &&
 
-                <Scanner onReadCode={this.handleLanguage} skipScanPass={this.skipScan} />
+                    <Scanner onReadCode={this.readCode} skipScanPass={this.skipScan} addScanProductPass={this.addScanProduct} />
+
+                    }
 
 
-                {this.state.hasData &&
-                <View style={styles.dataBlock}>
-                    <Text>Name: {this.state.product.name} </Text>
-                    <Text>User: {this.state.product.user} </Text>
-                    <Text>Upc: {this.state.product.upc} </Text>
+                    {this.state.hasData &&
+                    <View style={styles.dataBlock}>
+                        <Text>Name: {this.state.temporaryProduct.name} </Text>
+                        <Text>User: {this.state.temporaryProduct.user} </Text>
+                        <Text>Upc: {this.state.temporaryProduct.upc} </Text>
 
-                    <View style={styles.inputBlock}>
-                        <Text>Count </Text>
-                        <TextInput
-                            style={styles.inputStyle}
-                            placeholder="Count"
-                            value={this.state.text}
-                            onChangeText={(text) => this.setState({text})}
-                        />
+                        {/*<View style={styles.inputBlock}>*/}
+                            {/*<Text>Count </Text>*/}
+                            {/*<TextInput*/}
+                                {/*style={styles.inputStyle}*/}
+                                {/*placeholder="Count"*/}
+                                {/*value={this.state.text}*/}
+                                {/*onChangeText={(text) => this.setState({text})}*/}
+                            {/*/>*/}
+                        {/*</View>*/}
+
+                        <View style={{flex: 0, flexDirection: 'row', justifyContent: 'space-between', marginTop: 10,}}>
+                            {this.state.products.length > 0 &&
+                                <Button
+                                    color="#00a65a"
+                                    title='remove last'
+                                    onPress={this.removeLastProduct}
+                                />
+                            }
+
+                                <Button
+                                    color="#00a65a"
+                                    title='done'
+                                    onPress={this.doneProduct}
+                                />
+
+                        </View>
+
                     </View>
+                    }
 
-                    <Button
-                        color="#00a65a"
-                        title='Send'
-                        style={{
-                            marginTop: 10,
-                        }}
-                    />
+                    {this.state.productsData &&
+                        <View style={styles.dataBlock}>
+                            <View style={styles.productsDataList}>
+                                {this.state.products.map(product =>
+                                    <View style={styles.productsDataItem}>
+                                        <Text> <Text style={styles.fontBold}>Name:</Text>  {product.name} </Text>
+                                        <Text><Text style={styles.fontBold}>User:</Text> {product.user} </Text>
+                                        <Text><Text style={styles.fontBold}>Upc:</Text> {product.upc} </Text>
+                                    </View>
+                                )}
 
-                </View>
-                }
+                            </View>
 
+                            <View>
+                                <Text style={styles.fontBold}>Select shelf</Text>
+
+                                <View style={{ borderWidth: 1, borderColor: 'black', marginBottom: 20}}>
+                                    <Picker
+                                        selectedValue={this.state.selectVal}
+                                        style={{height: 30, width: '100%',}}
+                                        onValueChange={(itemValue, itemIndex) =>
+                                            this.setState({selectVal: itemValue})
+                                        }>
+                                        <Picker.Item label="Select" value="Select" />
+                                        <Picker.Item label="Java" value="java" />
+                                        <Picker.Item label="JavaScript" value="js" />
+                                    </Picker>
+                                </View>
+
+                                <Button
+                                    color="#00a65a"
+                                    title='Close order'
+                                    onPress={this.closeOrder}
+                                />
+                            </View>
+
+                        </View>
+                    }
+
+                </ScrollView>
 
             </View>
         );
@@ -167,6 +281,26 @@ export default class GetProductComponent extends React.Component {
 }
 
 const styles = StyleSheet.create({
+
+    fontBold: {
+        fontWeight: 'bold',
+    },
+
+    productsDataList: {
+        flex: 0,
+        flexDirection: 'row',
+        flexWrap: 'wrap'
+    },
+
+    productsDataItem: {
+        flex: 0,
+        height: 100,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: 'black',
+        padding: 5,
+        marginBottom: 10
+    },
 
     logout: {
         flex: 0,
@@ -217,6 +351,7 @@ const styles = StyleSheet.create({
         marginLeft: 20,
         marginRight: 20,
         marginTop: 15,
+        marginBottom: 20,
         borderWidth: 1,
         borderColor: '#eee',
         backgroundColor: '#ccc',
